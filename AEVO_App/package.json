@@ -1,0 +1,31 @@
+{
+  "name": "aevo-praesentations-app",
+  "version": "1.0.0",
+  "description": "AEVO Prüfungs-Präsentationssystem",
+  "main": "main.js",
+  "author": "AEVO Team",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-linux": "electron-builder --linux",
+    "dist": "electron-builder --linux AppImage"
+  },
+  "build": {
+    "appId": "com.aevo.presentation",
+    "productName": "AEVO Präsentationssystem",
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Education",
+      "icon": "icon.png"
+    },
+    "files": [
+      "**/*",
+      "!dist",
+      "!node_modules"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.9.1"
+  }
+}

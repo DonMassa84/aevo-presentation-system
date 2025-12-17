@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEVO Präsentationssystem 2025</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 10px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-number {
+      font-size: 2.5em;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      opacity: 0.9;
+      font-size: 0.9em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-primary { border-left: 5px solid #60a5fa; }
+    .card-video { border-left: 5px solid #f472b6; }
+    .card-pdf { border-left: 5px solid #fbbf24; }
+
+    .icon {
+      font-size: 4em;
+      margin-bottom: 15px;
+    }
+
+    .card h2 {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    .status-bar {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px 25px;
+      border-radius: 10px;
+      font-size: 0.9em;
+      backdrop-filter: blur(10px);
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 1.8em; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎓 AEVO Präsentationssystem 2025</h1>
+      <p>Prüfungsbereit - Alle Formate verfügbar</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number">57</div>
+        <div class="stat-label">Strategie-Slides</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">48</div>
+        <div class="stat-label">Passive-Slides</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">105</div>
+        <div class="stat-label">Gesamt</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">4</div>
+        <div class="stat-label">Formate</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Slideshows -->
+      <div class="card card-primary" onclick="openStrategie()">
+        <div class="icon">📊</div>
+        <h2>Serie A: Strategie</h2>
+        <p>57 Slides - Neuro-Didaktik-Strategien</p>
+      </div>
+
+      <div class="card card-primary" onclick="openPassive()">
+        <div class="icon">🔄</div>
+        <h2>Serie B: Passive Loop</h2>
+        <p>48 Slides - Didaktik-Loop</p>
+      </div>
+
+      <!-- Videos -->
+      <div class="card card-video" onclick="playVideo('AEVO_Strategie_Lerntyp.mp4')">
+        <div class="icon">🎬</div>
+        <h2>Video: Strategie</h2>
+        <p>MP4 - 1,9 MB - 5s/Slide</p>
+      </div>
+
+      <div class="card card-video" onclick="playVideo('AEVO_Passive_Loop.mp4')">
+        <div class="icon">🎥</div>
+        <h2>Video: Passive</h2>
+        <p>MP4 - 1,3 MB - 5s/Slide</p>
+      </div>
+
+      <!-- PDFs -->
+      <div class="card card-pdf" onclick="openPDF('AEVO_Strategie_Lerntyp.pdf')">
+        <div class="icon">📄</div>
+        <h2>PDF: Strategie</h2>
+        <p>PDF - 5,7 MB - Druckversion</p>
+      </div>
+
+      <div class="card card-pdf" onclick="openPDF('AEVO_Passive_Loop.pdf')">
+        <div class="icon">📋</div>
+        <h2>PDF: Passive</h2>
+        <p>PDF - 4,1 MB - Druckversion</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    ✅ Bereit
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    function showStatus(message) {
+      document.getElementById('statusBar').textContent = message;
+      setTimeout(() => {
+        document.getElementById('statusBar').textContent = '✅ Bereit';
+      }, 3000);
+    }
+
+    function openStrategie() {
+      ipcRenderer.send('open-strategie');
+      showStatus('📊 Öffne Strategie-Slideshow...');
+    }
+
+    function openPassive() {
+      ipcRenderer.send('open-passive');
+      showStatus('🔄 Öffne Passive-Slideshow...');
+    }
+
+    function playVideo(filename) {
+      ipcRenderer.send('play-video', filename);
+      showStatus('🎬 Spiele Video ab...');
+    }
+
+    function openPDF(filename) {
+      ipcRenderer.send('open-pdf', filename);
+      showStatus('📄 Öffne PDF...');
+    }
+  </script>
+</body>
+</html>

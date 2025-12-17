@@ -1,0 +1,13 @@
+*.jpg
+*.png
+*.pdf
+*.pptx
+*.mp4
+*.zip
+*.tar.gz
+*_JPG/
+AEVO_Export/
+AEVO_Diashow*/
+AEVO_Slideshow*/
+node_modules/
+dist/
