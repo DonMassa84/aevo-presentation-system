@@ -1,0 +1,31 @@
+AEVO SCHATTENMACHER - COMMAND CHEATSHEET
+
+PRÄSENTATION:
+  aevo-strategie      Serie A (57 Slides)
+  aevo-passive        Serie B (48 Slides)
+  aevo-complete       Alle 105 Slides
+
+MEDIA:
+  aevo-video          Videos abspielen
+  aevo-pdf            PDFs öffnen
+
+SYSTEM:
+  aevo-count          Slides zählen
+  aevo-status         Status anzeigen
+
+USB:
+  usb-aevo            Zum USB-Ordner
+  usb-video           Videos vom USB
+
+APP:
+  aevo-app            Electron App starten
+
+LERNSYSTEM:
+  MORGENS:     aevo-strategie
+  MITTAGS:     aevo-pdf
+  ABENDS:      aevo-video
+  WÖCHENTLICH: aevo-fachgespräch
+  MONATLICH:   aevo-complete
+
+Erstellt: Dezember 2025
+Schattenmacher Tactical System
