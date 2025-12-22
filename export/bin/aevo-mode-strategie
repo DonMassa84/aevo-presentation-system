@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-BASE="$HOME/Bilder/AEVO_Unterweisung_Active_Directory_Nutzer_anlegen"
-STRATEGIE="$BASE/AEVO_Slideshow_Strategie_Lerntyp_JPG"
-systemctl --user stop wallpaper-passive-slideshow.service 2>/dev/null || true
-"$HOME/.local/bin/wallpaper-passive-slideshow.sh" "$STRATEGIE" 120 &
-notify-send "AEVO Strategie Modus" "57 Slides | Neuro-Fokus" -t 2500 || true
+REPO="${REPO_DIR:-$HOME/aevo-presentation-system}"
+bash "$REPO/export/bin/aevo-set-mode" strategie

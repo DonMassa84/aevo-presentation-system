@@ -1,32 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SVC="${AEVO_SVC:-aevo-wallpaper-loop.service}"
 MODE="${1:-}"
+test -n "${MODE:-}" || { echo "FAIL: usage: aevo-set-mode <rebuild|strategie|master|ultra-fast>"; exit 1; }
 
-allowed="base default didaktik exam15 final security spaced"
-
-if [ -z "${MODE:-}" ]; then
-  echo "Usage: aevo-set-mode <base|default|didaktik|exam15|final|security|spaced>"
-  exit 2
-fi
-
-case " $allowed " in
-  *" $MODE "*) ;;
-  *) echo "FAIL: unknown mode: $MODE"; echo "Allowed: $allowed"; exit 2 ;;
+case "$MODE" in
+  rebuild|strategie|master|ultra-fast|ultra_fast) : ;;
+  *) echo "FAIL: unknown mode: $MODE"; exit 1 ;;
 esac
 
-DROP_DIR="$HOME/.config/systemd/user/${SVC}.d"
-MODE_CONF="$DROP_DIR/mode.conf"
-mkdir -p "$DROP_DIR"
+if [ "$MODE" = "ultra-fast" ]; then MODE="ultra_fast"; fi
 
-printf "[Service]\nEnvironment=AEVO_MODE=%s\n" "$MODE" > "$MODE_CONF"
+REPO="${REPO_DIR:-$HOME/aevo-presentation-system}"
+SLIDES="$REPO/slides"
+UNIT="aevo-wallpaper-loop.service"
+ACTIVE="$SLIDES/_order_exam15.txt"
+MODEFILE="$HOME/.cache/aevo_mode.txt"
 
-systemctl --user daemon-reload >/dev/null 2>&1 || true
-systemctl --user restart "$SVC" >/dev/null 2>&1 || true
+test -x "$REPO/export/bin/aevo-build-orders" || { echo "FAIL: missing: $REPO/export/bin/aevo-build-orders"; exit 1; }
+"$REPO/export/bin/aevo-build-orders" >/dev/null
 
-echo "MODE gesetzt: $MODE"
-echo "mode.conf:"
-sed -n '1,20p' "$MODE_CONF" || true
-echo
-systemctl --user status "$SVC" --no-pager | sed -n '1,25p' || true
+SRC="$SLIDES/_order_${MODE}.txt"
+test -s "$SRC" || { echo "FAIL: missing/empty: $SRC"; exit 1; }
+
+cp -f "$SRC" "$ACTIVE"
+test -s "$ACTIVE" || { echo "FAIL: cannot write: $ACTIVE"; exit 1; }
+
+printf "%s\n" "$MODE" > "$MODEFILE"
+
+if systemctl --user list-unit-files | grep -q "^${UNIT}"; then
+  systemctl --user restart "$UNIT" >/dev/null 2>&1 || true
+fi
+
+echo "OK: MODE=$MODE"
+echo "OK: ORDER=$ACTIVE ($(wc -l < "$ACTIVE") entries)"
+
+if command -v aevo-which-slide >/dev/null 2>&1; then
+  echo "OK: CURRENT=$(aevo-which-slide 2>/dev/null | head -n 1 || true)"
+fi

@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+set -euo pipefail
+REPO="${REPO_DIR:-$HOME/aevo-presentation-system}"
+SLIDES="$REPO/slides"
+test -d "$SLIDES" || { echo "FAIL: slides/ fehlt: $SLIDES"; exit 1; }
+
+pick() {
+  local name="$1"
+  local p=""
+  for ext in jpg jpeg png webp; do
+    if [ -f "$SLIDES/$name.$ext" ]; then p="$SLIDES/$name.$ext"; break; fi
+  done
+  test -n "${p:-}" || return 1
+  printf "%s\n" "$p"
+}
+
+pick_num() {
+  local n="$1"
+  local base="$2"
+  local p=""
+  for ext in jpg jpeg png webp; do
+    if [ -f "$SLIDES/${n}_${base}.$ext" ]; then p="$SLIDES/${n}_${base}.$ext"; break; fi
+  done
+  test -n "${p:-}" || return 1
+  printf "%s\n" "$p"
+}
+
+have_numbered=0
+if ls "$SLIDES"/01_* >/dev/null 2>&1; then have_numbered=1; fi
+
+order_rebuild=()
+order_strategie=()
+order_ultra=()
+order_master=()
+
+if [ "$have_numbered" = "1" ]; then
+  while IFS= read -r f; do
+    test -f "$f" && order_master+=("$f")
+  done < <(find "$SLIDES" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | LC_ALL=C sort)
+
+  for item in \
+    "01 intro" \
+    "02 ziel" \
+    "03 methode" \
+    "04 demo" \
+    "05 ueben" \
+    "06 lkk" \
+    "07 fragen"
+  do
+    n="${item%% *}"
+    b="${item#* }"
+    p="$(pick_num "$n" "$b" 2>/dev/null || true)"
+    if [ -n "${p:-}" ]; then
+      order_rebuild+=("$p")
+      order_strategie+=("$p")
+    fi
+  done
+
+  for item in \
+    "02 ziel" \
+    "03 methode" \
+    "06 lkk" \
+    "07 fragen"
+  do
+    n="${item%% *}"
+    b="${item#* }"
+    p="$(pick_num "$n" "$b" 2>/dev/null || true)"
+    if [ -n "${p:-}" ]; then
+      order_ultra+=("$p")
+    fi
+  done
+else
+  for base in intro ziel methode demo ueben lkk fragen; do
+    p="$(pick "$base" 2>/dev/null || true)"
+    if [ -n "${p:-}" ]; then
+      order_rebuild+=("$p")
+      order_strategie+=("$p")
+    fi
+  done
+
+  for base in ziel methode lkk fragen; do
+    p="$(pick "$base" 2>/dev/null || true)"
+    if [ -n "${p:-}" ]; then
+      order_ultra+=("$p")
+    fi
+  done
+
+  while IFS= read -r f; do
+    test -f "$f" && order_master+=("$f")
+  done < <(find "$SLIDES" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | LC_ALL=C sort)
+fi
+
+write_order() {
+  local mode="$1"
+  shift
+  local arr=("$@")
+  local f="$SLIDES/_order_${mode}.txt"
+  : > "$f"
+  for p in "${arr[@]}"; do
+    test -f "$p" && printf "%s\n" "$p" >> "$f"
+  done
+  test -s "$f" || { echo "FAIL: order leer: $f"; exit 1; }
+  echo "OK: wrote $f ($(wc -l < "$f") entries)"
+}
+
+test "${#order_master[@]}" -gt 0 || { echo "FAIL: keine Bilder in $SLIDES"; exit 1; }
+test "${#order_rebuild[@]}" -gt 0 || order_rebuild=("${order_master[@]}")
+test "${#order_strategie[@]}" -gt 0 || order_strategie=("${order_master[@]}")
+test "${#order_ultra[@]}" -gt 0 || order_ultra=("${order_master[@]}")
+
+write_order rebuild "${order_rebuild[@]}"
+write_order strategie "${order_strategie[@]}"
+write_order ultra_fast "${order_ultra[@]}"
+write_order master "${order_master[@]}"
+
+echo "OK: modes ready: rebuild strategie ultra_fast master"
