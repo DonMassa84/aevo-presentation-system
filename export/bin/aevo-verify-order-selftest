@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+p="$HOME/.local/bin/aevo-verify-order"
+test -f "$p" || { echo "FAIL: missing $p"; exit 2; }
+
+s="$(python3 - <<'P'
+import pathlib, re
+p = pathlib.Path.home()/'.local/bin/aevo-verify-order'
+t = p.read_text(encoding='utf-8', errors='replace')
+need = [
+  '#!/usr/bin/env bash',
+  'SVC="${AEVO_SVC:-aevo-wallpaper-loop.service}"',
+  'SLIDES_DIR="${AEVO_SLIDES_DIR:-$HOME/Bilder/AEVO_Feb2026_Slideshow_DarkMode_Lerntyp}"',
+  'detect_mode() {',
+  'order="$SLIDES_DIR/_order_${mode}.txt"',
+  'find "$SLIDES_DIR"',
+  'MISSING_FILES:'
+]
+bad = []
+for n in need:
+  if n not in t:
+    bad.append(n)
+junk = re.findall(r'EOF[A-Z]{2,}|trEOFIN|EOFOME', t)
+print("OK" if not bad and not junk else "BAD")
+print("missing:", len(bad))
+for x in bad: print("  -", x)
+print("junk_hits:", len(junk))
+for j in junk[:10]: print("  -", j)
+P
+)"
+echo "$s"

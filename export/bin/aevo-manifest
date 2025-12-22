@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ORDDIR="export/slides/orders"
+OUT="export/slides/manifest.json"
+
+# pick default order file
+ORDER=""
+for f in "_order.txt" "_order_default.txt" "_order_base.txt"; do
+  if [ -f "$ORDDIR/$f" ]; then ORDER="$ORDDIR/$f"; break; fi
+done
+if [ -z "$ORDER" ]; then
+  echo "FAIL: no order file found in $ORDDIR"
+  exit 1
+fi
+
+# normalize: ignore blanks and comments
+mapfile -t LINES < <(grep -vE '^\s*$|^\s*#' "$ORDER" || true)
+if [ "${#LINES[@]}" -eq 0 ]; then
+  echo "FAIL: order file empty: $ORDER"
+  exit 1
+fi
+
+# build json
+tmp="$(mktemp)"
+{
+  echo "{"
+  echo "  \"generated_at\": \"$(date -Is)\","
+  echo "  \"order_source\": \"${ORDER#./}\","
+  echo "  \"slides\": ["
+  n="${#LINES[@]}"
+  i=0
+  for line in "${LINES[@]}"; do
+    i=$((i+1))
+    # keep as raw path. user can map later in app.
+    esc="$(printf '%s' "$line" | python3 - <<'PY'
+import sys, json
+print(json.dumps(sys.stdin.read().strip()))
+PY
+)"
+    # derive id from basename without extension
+    base="$(basename "$line")"
+    id="${base%.*}"
+    id_esc="$(printf '%s' "$id" | python3 - <<'PY'
+import sys, json
+print(json.dumps(sys.stdin.read().strip()))
+PY
+)"
+    comma=","
+    [ "$i" -eq "$n" ] && comma=""
+    echo "    { \"id\": ${id_esc}, \"path\": ${esc} }${comma}"
+  done
+  echo "  ]"
+  echo "}"
+} > "$tmp"
+
+mv -f "$tmp" "$OUT"
+echo "OK: wrote $OUT"

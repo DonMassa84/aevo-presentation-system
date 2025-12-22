@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+mkdir -p "$HOME/.config/systemd/user"
+cp -f export/systemd/user/aevo-slideshow.service "$HOME/.config/systemd/user/"
+cp -f export/systemd/user/aevo-wallpaper-loop.service "$HOME/.config/systemd/user/"
+systemctl --user daemon-reload
+echo "OK: installed user units (enable with: systemctl --user enable --now aevo-slideshow.service)"
