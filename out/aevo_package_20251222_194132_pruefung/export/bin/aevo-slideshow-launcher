@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Prüfe ob GUI verfügbar
+if command -v yad >/dev/null 2>&1; then
+  GUI="yad"
+elif command -v zenity >/dev/null 2>&1; then
+  GUI="zenity"
+else
+  # Fallback: Terminal-Menü
+  notify-send "AEVO Slideshow" "GUI nicht verfügbar. Installiere: sudo apt install yad" -t 3000
+  exit 1
+fi
+
+# Status abrufen
+if systemctl --user is-active wallpaper-passive-slideshow.service >/dev/null 2>&1; then
+  STATUS="🟢 AKTIV"
+else
+  STATUS="🔴 GESTOPPT"
+fi
+
+# Zeige Menü
+if [ "$GUI" = "yad" ]; then
+  choice=$(yad --list \
+    --title="AEVO Slideshow Manager" \
+    --text="Status: $STATUS\n\nWähle einen Modus:" \
+    --column="Modus" --column="Slides" --column="Intervall" --column="Beschreibung" \
+    "Rebuild" "48" "120s" "Didaktik-Fokus (Schritte, Q/A)" \
+    "Strategie" "57" "120s" "Neuro-Strategien (Zustand, Kodierung)" \
+    "Master" "105" "120s" "Komplett-Set (Rebuild + Strategie)" \
+    "Ultra-Fast" "20" "15s" "Quick-Recall (Ultra-Cards)" \
+    "Status" "-" "-" "Status anzeigen" \
+    "Stoppen" "-" "-" "Slideshow stoppen" \
+    --width=600 --height=400 \
+    --button="Starten:0" --button="Abbrechen:1")
+  
+  mode=$(echo "$choice" | cut -d'|' -f1)
+else
+  choice=$(zenity --list \
+    --title="AEVO Slideshow Manager" \
+    --text="Status: $STATUS\n\nWähle einen Modus:" \
+    --column="Modus" --column="Beschreibung" \
+    "Rebuild" "48 Slides (Didaktik)" \
+    "Strategie" "57 Slides (Neuro)" \
+    "Master" "105 Slides (Komplett)" \
+    "Ultra-Fast" "20 Slides (Quick-Recall)" \
+    "Status" "Status anzeigen" \
+    "Stoppen" "Slideshow stoppen" \
+    --width=500 --height=400)
+  
+  mode="$choice"
+fi
+
+# Führe Aktion aus
+case "$mode" in
+  Rebuild)
+    aevo-mode-rebuild
+    ;;
+  Strategie)
+    aevo-mode-strategie
+    ;;
+  Master)
+    aevo-mode-master
+    ;;
+  Ultra-Fast)
+    aevo-mode-ultra-fast
+    ;;
+  Status)
+    aevo-status | zenity --text-info --title="AEVO Status" --width=600 --height=400 || \
+    aevo-status | yad --text-info --title="AEVO Status" --width=600 --height=400
+    ;;
+  Stoppen)
+    aevo-passive-stop
+    ;;
+  *)
+    exit 0
+    ;;
+esac

@@ -1,0 +1,12 @@
+[Unit]
+Description=AEVO Wallpaper Loop
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/aevo-presentation-system/export/bin/aevo-wallpaper-loop.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

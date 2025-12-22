@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="${AEVO_SLIDES_DIR:-${1:-$HOME/Bilder/AEVO_Feb2026_Slideshow_DarkMode_Lerntyp}}"
+echo "DIR=$DIR"
+
+items=()
+
+# default order
+if [ -f "$DIR/_order.txt" ]; then
+  items+=("default")
+fi
+
+# named orders
+while IFS= read -r f; do
+  b="$(basename "$f")"
+  n="${b#_order_}"
+  n="${n%.txt}"
+  items+=("$n")
+done < <(ls -1 "$DIR"/_order_*.txt 2>/dev/null | sort -V || true)
+
+if [ "${#items[@]}" -eq 0 ]; then
+  echo "KEINE MODES GEFUNDEN"
+  exit 0
+fi
+
+printf '%s\n' "${items[@]}" | awk 'NF' | sort -u

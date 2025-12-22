@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+BASE="$HOME/Bilder/AEVO_Unterweisung_Active_Directory_Nutzer_anlegen"
+# Nur Ultra-Short Cards (0029-0048 aus Rebuild)
+TMP="$HOME/.cache/aevo-ultra-fast"
+mkdir -p "$TMP"
+rm -f "$TMP"/*.jpg 2>/dev/null || true
+cp "$BASE/AEVO_Slideshow_Lerntyp_Rebuild_JPG"/00{29..48}*.jpg "$TMP/" 2>/dev/null || true
+systemctl --user stop wallpaper-passive-slideshow.service 2>/dev/null || true
+"$HOME/.local/bin/wallpaper-passive-slideshow.sh" "$TMP" 15 &
+notify-send "AEVO Ultra-Fast" "20 Slides | 15s Intervall" -t 2500 || true

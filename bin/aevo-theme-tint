@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+THEME="${1:-pruefung}"
+
+test -f "content/theme_palette.json" || { echo "FAIL: missing content/theme_palette.json"; exit 1; }
+
+if command -v magick >/dev/null 2>&1; then
+  IM="magick"
+elif command -v convert >/dev/null 2>&1; then
+  IM="convert"
+else
+  echo "FAIL: ImageMagick missing. Install: sudo apt install -y imagemagick"
+  exit 1
+fi
+
+python3 - <<'PY'
+import json, os, sys
+from pathlib import Path
+
+theme = os.environ.get("THEME", "pruefung")
+pal = json.loads(Path("content/theme_palette.json").read_text(encoding="utf-8"))
+if theme not in pal:
+  print("FAIL: unknown theme. Options:", ", ".join([k for k in pal.keys() if k not in ("meaning",)]))
+  sys.exit(1)
+
+tint_hex = pal[theme]["tint_hex"]
+tint_pct = int(pal[theme]["tint_pct"])
+
+candidates = []
+for base in ["export", "."]:
+  p = Path(base)
+  if not p.exists():
+    continue
+  for d in p.rglob("*"):
+    if not d.is_dir():
+      continue
+    imgs = list(d.glob("*.jpg")) + list(d.glob("*.jpeg")) + list(d.glob("*.png"))
+    if len(imgs) >= 20:
+      candidates.append((len(imgs), d))
+
+if not candidates:
+  print("FAIL: no image set found (need >=20 jpg/png). Expected under export/...")
+  sys.exit(1)
+
+candidates.sort(reverse=True, key=lambda x: x[0])
+count, src_dir = candidates[0]
+
+out_root = Path("export/slides_themes") / theme
+out_dir = out_root / src_dir
+out_dir.mkdir(parents=True, exist_ok=True)
+
+print(f"OK: theme={theme} tint={tint_hex} pct={tint_pct}")
+print(f"OK: source={src_dir} images={count}")
+print(f"OK: target={out_dir}")
+
+Path("export/theme_current.txt").write_text(theme + "\n", encoding="utf-8")
+PY
+
+THEME="$THEME" python3 - <<'PY'
+import json, os, subprocess, sys
+from pathlib import Path
+
+theme = os.environ["THEME"]
+pal = json.loads(Path("content/theme_palette.json").read_text(encoding="utf-8"))
+tint_hex = pal[theme]["tint_hex"]
+tint_pct = int(pal[theme]["tint_pct"])
+
+src_candidates = []
+for base in ["export", "."]:
+  p = Path(base)
+  if not p.exists():
+    continue
+  for d in p.rglob("*"):
+    if not d.is_dir():
+      continue
+    imgs = list(d.glob("*.jpg")) + list(d.glob("*.jpeg")) + list(d.glob("*.png"))
+    if len(imgs) >= 20:
+      src_candidates.append((len(imgs), d))
+src_candidates.sort(reverse=True, key=lambda x: x[0])
+src_dir = src_candidates[0][1]
+
+out_dir = (Path("export/slides_themes") / theme / src_dir)
+out_dir.mkdir(parents=True, exist_ok=True)
+
+im = os.environ.get("IM", "magick")
+
+imgs = list(src_dir.glob("*.jpg")) + list(src_dir.glob("*.jpeg")) + list(src_dir.glob("*.png"))
+for img in imgs:
+  out = out_dir / img.name
+  cmd = [im, str(img), "-fill", tint_hex, "-colorize", f"{tint_pct}%", "-contrast-stretch", "1%x1%", str(out)]
+  subprocess.run(cmd, check=True)
+
+print("OK: tinted images written")
+PY

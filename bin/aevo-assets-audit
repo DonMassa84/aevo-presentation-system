@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "${REPO_DIR:-$HOME/aevo-presentation-system}"
+test -f content/aevo_master.yaml || { echo "FAIL: missing content/aevo_master.yaml"; exit 1; }
+
+python3 - <<'PY'
+from pathlib import Path
+import re, collections
+
+y = Path("content/aevo_master.yaml").read_text(encoding="utf-8", errors="replace").splitlines()
+files = []
+rx = re.compile(r'^\s*file:\s*(.+?)\s*$')
+for line in y:
+    m = rx.match(line)
+    if not m:
+        continue
+    v = m.group(1).strip().strip('"').strip("'")
+    if v:
+        files.append(v)
+
+root = Path(".").resolve()
+missing = []
+present = []
+for f in files:
+    p = (root / f).resolve()
+    if p.exists():
+        present.append(f)
+    else:
+        missing.append(f)
+
+def ext_counts(base: Path):
+    c = collections.Counter()
+    for p in base.rglob("*"):
+        if p.is_file():
+            c[p.suffix.lower() or "(noext)"] += 1
+    return c
+
+print("== AEVO ASSET AUDIT ==")
+print(f"slides.file entries: {len(files)}")
+print(f"present: {len(present)}")
+print(f"missing: {len(missing)}")
+
+if missing:
+    print("")
+    print("MISSING FILES (first 50):")
+    for f in missing[:50]:
+        print(f"- {f}")
+
+print("")
+exp = Path("export")
+if exp.exists():
+    c = ext_counts(exp)
+    top = c.most_common(20)
+    print("export/ filetypes (top):")
+    for k,v in top:
+        print(f"{v:6d} {k}")
+else:
+    print("export/ does not exist")
+
+print("")
+print("HINT:")
+print("1) Wenn missing>0: Lege die Dateien exakt unter den angegebenen Pfaden ab (relativ zum Repo).")
+print("2) Oder nutze bin/aevo-assets-repair mit ASSET_SRC_DIR, um automatisch zu kopieren.")
+PY

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "${REPO_DIR:-$HOME/aevo-presentation-system}"
+MODE="${1:-}"
+if [ -z "${MODE:-}" ]; then
+  echo "usage:"
+  echo "  bin/aevo-start slideshow"
+  echo "  bin/aevo-start app"
+  exit 1
+fi
+if [ "$MODE" = "slideshow" ]; then
+  if [ -f "$HOME/.config/systemd/user/aevo-slideshow.service" ]; then
+    systemctl --user daemon-reload >/dev/null 2>&1 || true
+    systemctl --user enable --now aevo-slideshow.service
+    systemctl --user status aevo-slideshow.service --no-pager || true
+    echo "OK: logs:"
+    journalctl --user -u aevo-slideshow.service -n 50 --no-pager || true
+    exit 0
+  fi
+  echo "FAIL: missing systemd unit: ~/.config/systemd/user/aevo-slideshow.service"
+  exit 1
+fi
+if [ "$MODE" = "app" ]; then
+  if [ ! -d AEVO_App ]; then
+    echo "FAIL: missing AEVO_App/"
+    exit 1
+  fi
+  cd AEVO_App
+  if [ ! -f package.json ]; then
+    echo "FAIL: AEVO_App/package.json missing"
+    exit 1
+  fi
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "FAIL: npm missing. Install Node.js + npm first."
+    exit 1
+  fi
+  if [ -f package-lock.json ]; then
+    npm ci
+  else
+    npm install
+  fi
+  echo "OK: starting dev server (Ctrl+C to stop)"
+  npm run dev
+  exit 0
+fi
+echo "FAIL: unknown mode: $MODE"
+exit 1

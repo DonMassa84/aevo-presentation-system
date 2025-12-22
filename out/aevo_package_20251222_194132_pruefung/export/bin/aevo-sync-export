@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mkdir -p export/bin
+
+# SAFE MERGE:
+# - copy bin/* into export/bin/
+# - never delete anything in export/bin/
+rsync -av bin/ export/bin/
+
+echo "OK: bin merged into export/bin (safe, no delete)"

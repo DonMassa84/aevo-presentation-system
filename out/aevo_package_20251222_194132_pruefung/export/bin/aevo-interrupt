@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if [ ! -f "$HOME/.config/aevo-coach/env" ]; then
+  notify-send "AEVO Coach" "Fehlt: ~/.config/aevo-coach/env (OPENAI_API_KEY=...)\nDatei anlegen, chmod 600."
+  exit 1
+fi
+set -a
+. "$HOME/.config/aevo-coach/env"
+set +a
+python3 "$HOME/.config/aevo-coach/coach.py"

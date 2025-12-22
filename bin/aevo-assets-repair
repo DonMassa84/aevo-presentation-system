@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "${REPO_DIR:-$HOME/aevo-presentation-system}"
+SRC="${ASSET_SRC_DIR:-${1:-}}"
+test -n "${SRC:-}" || { echo "FAIL: set ASSET_SRC_DIR or pass as arg"; exit 1; }
+test -d "$SRC" || { echo "FAIL: not a dir: $SRC"; exit 1; }
+test -f content/aevo_master.yaml || { echo "FAIL: missing content/aevo_master.yaml"; exit 1; }
+
+python3 - <<'PY'
+from pathlib import Path
+import os, re, shutil, sys
+
+src = Path(os.environ["SRC"]).expanduser().resolve()
+root = Path(".").resolve()
+
+y = Path("content/aevo_master.yaml").read_text(encoding="utf-8", errors="replace").splitlines()
+rx = re.compile(r'^\s*file:\s*(.+?)\s*$')
+need = []
+for line in y:
+    m = rx.match(line)
+    if not m:
+        continue
+    v = m.group(1).strip().strip('"').strip("'")
+    if v:
+        need.append(v)
+
+missing = []
+for rel in need:
+    if not (root / rel).exists():
+        missing.append(rel)
+
+if not missing:
+    print("OK: no missing slides.file assets")
+    raise SystemExit(0)
+
+index = {}
+for d, _, files in os.walk(src):
+    for fn in files:
+        key = fn.lower()
+        if key not in index:
+            index[key] = Path(d) / fn
+
+copied = 0
+notfound = 0
+for rel in missing:
+    dst = (root / rel)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    key = Path(rel).name.lower()
+    cand = index.get(key)
+    if not cand:
+        notfound += 1
+        continue
+    try:
+        shutil.copy2(cand, dst)
+        copied += 1
+    except Exception:
+        notfound += 1
+
+print(f"OK: copied={copied} notfound={notfound} from {src}")
+if notfound:
+    print("HINT: set ASSET_SRC_DIR to a narrower folder that actually contains your slide assets.")
+PY

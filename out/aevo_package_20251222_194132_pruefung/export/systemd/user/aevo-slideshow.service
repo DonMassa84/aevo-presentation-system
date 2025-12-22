@@ -1,0 +1,12 @@
+[Unit]
+Description=AEVO Slideshow Launcher
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/aevo-presentation-system/export/bin/aevo-slideshow-launcher
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

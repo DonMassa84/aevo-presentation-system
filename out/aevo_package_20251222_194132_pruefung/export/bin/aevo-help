@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SVC="${SVC:-aevo-wallpaper-loop.service}"
+DIR="${AEVO_SLIDES_DIR:-${1:-$HOME/Bilder/AEVO_Feb2026_Slideshow_DarkMode_Lerntyp}}"
+DROP_DIR="$HOME/.config/systemd/user/${SVC}.d"
+
+echo "== AEVO HELP =="
+echo "User: $USER"
+echo "XDG_SESSION_TYPE=${XDG_SESSION_TYPE:-}"
+echo "DISPLAY=${DISPLAY:-}"
+echo
+
+echo "== 1) Service =="
+if systemctl --user status "$SVC" --no-pager >/dev/null 2>&1; then
+  systemctl --user status "$SVC" --no-pager | sed -n '1,40p'
+else
+  echo "WARN: Service nicht gefunden/kein Zugriff: $SVC"
+fi
+echo
+
+echo "== 2) Aktueller MODE/ORDER aus Log (letzte 50 Zeilen) =="
+journalctl --user -u "$SVC" -n 50 --no-pager 2>/dev/null | egrep 'AEVO LOOP START|MODE=|ORDER=|COUNT=|SHOW ' || true
+echo
+
+echo "== 3) Drop-ins =="
+if [ -d "$DROP_DIR" ]; then
+  ls -la "$DROP_DIR" || true
+  echo
+  for f in "$DROP_DIR"/*.conf; do
+    [ -f "$f" ] || continue
+    echo "### $(basename "$f")"
+    sed -n '1,220p' "$f"
+    echo
+  done
+else
+  echo "Keine Drop-ins: $DROP_DIR"
+fi
+
+echo "== 4) Slides/Order-Dateien =="
+echo "DIR=$DIR"
+if [ -d "$DIR" ]; then
+  ls -1 "$DIR"/_order*.txt 2>/dev/null || true
+  echo
+  for f in "$DIR"/_order*.txt; do
+    [ -f "$f" ] || continue
+    echo "### $(basename "$f")"
+    echo -n "lines="; wc -l < "$f" | tr -d ' '
+    echo -n " first="; head -n1 "$f" || true
+    echo -n " last="; tail -n1 "$f" || true
+    echo
+  done
+  echo
+  echo "Slides (jpg) count:"
+  ls -1 "$DIR"/*.jpg 2>/dev/null | wc -l | tr -d ' '
+else
+  echo "WARN: DIR fehlt: $DIR"
+fi
+echo
+
+echo "== 5) Verfügbare Kommandos =="
+for c in aevo-start aevo-stop aevo-logs aevo-mode-linear aevo-mode-spaced aevo-mode-exam15 aevo-duration aevo-env aevo-api-test aevo-coach; do
+  if command -v "$c" >/dev/null 2>&1; then
+    echo "OK: $c -> $(command -v "$c")"
+  else
+    echo "MISS: $c"
+  fi
+done
+
+echo
+echo "FERTIG."

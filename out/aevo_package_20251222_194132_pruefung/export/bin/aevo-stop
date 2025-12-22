@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+systemctl --user stop aevo-wallpaper-loop.service
+echo "OK: stopped"

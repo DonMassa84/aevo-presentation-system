@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MODE="${1:-linear}"
+DIR="${2:-}"
+
+ENV_FILE="$HOME/.config/aevo-coach/env"
+DIR_DEFAULT="$HOME/Bilder/AEVO_Feb2026_Slideshow_DarkMode_Lerntyp"
+
+if [ -z "${DIR:-}" ] && [ -f "$ENV_FILE" ]; then
+  DIR="$(. "$ENV_FILE" >/dev/null 2>&1; printf '%s' "${AEVO_SLIDES_DIR:-}")" || true
+fi
+if [ -z "${DIR:-}" ]; then DIR="$DIR_DEFAULT"; fi
+
+case "$MODE" in
+  spaced) ORDER="$DIR/_order_spaced.txt" ;;
+  exam15) ORDER="$DIR/_order_exam15.txt" ;;
+  linear|passive|*) ORDER="$DIR/_order_base.txt" ;;
+esac
+
+[ -d "$DIR" ] || { echo "FAIL: DIR fehlt: $DIR"; exit 1; }
+[ -s "$ORDER" ] || { echo "FAIL: ORDER fehlt/leer: $ORDER"; exit 1; }
+
+sec_for() {
+  local f="$1" u
+  u="$(printf '%s' "$f" | tr '[:lower:]' '[:upper:]')"
+
+  if [ "$MODE" = "exam15" ]; then
+    case "$u" in
+      *RECALL*) echo 18 ;;
+      *CHECKLISTE*|*TECHNIK_AD*) echo 30 ;;
+      *FACHPRAECH*ANTWORT*) echo 28 ;;
+      *FACHPRAECH*|*PR_SENTATION*|*SICHERHEIT*|*METHODIK*|*UNTERWEISUNG*|*PR_FUNG*|*DIDAKTIK*) echo 24 ;;
+      *FINISH*) echo 20 ;;
+      *) echo 22 ;;
+    esac
+    return
+  fi
+
+  if [ "$MODE" = "spaced" ]; then
+    case "$u" in
+      0001_*|0002_*|0003_*) echo 120 ;;
+      *RECALL*) echo 45 ;;
+      *CHECKLISTE*|*TECHNIK_AD*) echo 75 ;;
+      *FACHPRAECH*ANTWORT*) echo 60 ;;
+      *FACHPRAECH*) echo 55 ;;
+      *SICHERHEIT*|*METHODIK*|*UNTERWEISUNG*|*PR_SENTATION*|*PR_FUNG*|*DIDAKTIK*) echo 70 ;;
+      *FINISH*) echo 50 ;;
+      *) echo 65 ;;
+    esac
+    return
+  fi
+
+  case "$u" in
+    0001_*|0002_*|0003_*) echo 150 ;;
+    *RECALL*) echo 60 ;;
+    *CHECKLISTE*|*TECHNIK_AD*) echo 90 ;;
+    *FACHPRAECH*ANTWORT*) echo 75 ;;
+    *FACHPRAECH*) echo 70 ;;
+    *SICHERHEIT*|*METHODIK*|*UNTERWEISUNG*|*PR_SENTATION*|*PR_FUNG*|*DIDAKTIK*) echo 85 ;;
+    *FINISH*) echo 60 ;;
+    *) echo 80 ;;
+  esac
+}
+
+mapfile -t LIST < <(grep -v '^[[:space:]]*$' "$ORDER" || true)
+TOTAL="${#LIST[@]}"
+[ "$TOTAL" -gt 0 ] || { echo "FAIL: keine Slides im ORDER"; exit 1; }
+
+missing=0
+sum=0
+for s in "${LIST[@]}"; do
+  if [ ! -f "$DIR/$s" ]; then
+    missing=$((missing+1))
+    continue
+  fi
+  sum=$((sum + $(sec_for "$s") ))
+done
+
+h=$((sum/3600))
+m=$(((sum%3600)/60))
+sec=$((sum%60))
+
+printf 'MODE=%s\nORDER=%s\nSLIDES_TOTAL=%s\nSLIDES_MISSING=%s\nDURATION=%dh%02dm%02ds\n' "$MODE" "$ORDER" "$TOTAL" "$missing" "$h" "$m" "$sec"

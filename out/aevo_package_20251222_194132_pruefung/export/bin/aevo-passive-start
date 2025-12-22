@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+systemctl --user stop wallpaper-4mon-slideshow.service 2>/dev/null || true
+systemctl --user restart wallpaper-passive-slideshow.service
+notify-send "AEVO Passive Slideshow" "Gestartet (PDF-Seiten)" -t 2500 || true

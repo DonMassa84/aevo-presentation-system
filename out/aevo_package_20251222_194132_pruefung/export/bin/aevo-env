@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ENV_FILE="$HOME/.config/aevo-coach/env"
+if [ ! -f "$ENV_FILE" ]; then echo "FAIL: $ENV_FILE fehlt"; exit 1; fi
+set -a
+. "$ENV_FILE"
+set +a
+echo "OPENAI_MODEL=${OPENAI_MODEL:-}"
+echo "AEVO_SLIDES_DIR=${AEVO_SLIDES_DIR:-}"
+k="${OPENAI_API_KEY:-}"
+len="$(printf '%s' "$k" | wc -c | tr -d ' ')"
+if [ "$len" -ge 20 ]; then echo "OPENAI_API_KEY=OK (len=$len, nicht angezeigt)"; else echo "OPENAI_API_KEY=FAIL (len=$len)"; fi

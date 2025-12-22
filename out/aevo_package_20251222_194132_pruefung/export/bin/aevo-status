@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║  AEVO SLIDESHOW STATUS                                     ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo ""
+if systemctl --user is-active wallpaper-passive-slideshow.service >/dev/null 2>&1; then
+  echo "Status: AKTIV"
+  echo ""
+  journalctl --user -u wallpaper-passive-slideshow.service -n 8 --no-pager
+else
+  echo "Status: GESTOPPT"
+fi
+echo ""
+echo "Verfügbare Modi:"
+echo "  aevo-mode-rebuild      → 48 Slides (Didaktik)"
+echo "  aevo-mode-strategie    → 57 Slides (Neuro)"
+echo "  aevo-mode-master       → 105 Slides (Alles)"
+echo "  aevo-mode-ultra-fast   → 20 Slides (15s/Slide)"
+echo "  aevo-passive-stop      → Stoppen"

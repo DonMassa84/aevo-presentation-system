@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+BASE="$HOME/Bilder/AEVO_Unterweisung_Active_Directory_Nutzer_anlegen"
+REBUILD="$BASE/AEVO_Slideshow_Lerntyp_Rebuild_JPG"
+systemctl --user stop wallpaper-passive-slideshow.service 2>/dev/null || true
+"$HOME/.local/bin/wallpaper-passive-slideshow.sh" "$REBUILD" 120 &
+notify-send "AEVO Rebuild Modus" "48 Slides | Didaktik-Fokus" -t 2500 || true

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SVC="aevo-wallpaper-loop.service"
+DROP_DIR="$HOME/.config/systemd/user/${SVC}.d"
+DROP_FILE="$DROP_DIR/override.conf"
+rm -f "$DROP_FILE" || true
+systemctl --user daemon-reload
+systemctl --user restart "$SVC"
+echo "OK: Sprint OFF (Default-Takt aus Script)"

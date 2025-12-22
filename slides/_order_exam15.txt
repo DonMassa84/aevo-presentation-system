@@ -1,0 +1,7 @@
+/home/schattenmacher/aevo-presentation-system/slides/demo.jpg
+/home/schattenmacher/aevo-presentation-system/slides/fragen.jpg
+/home/schattenmacher/aevo-presentation-system/slides/intro.jpg
+/home/schattenmacher/aevo-presentation-system/slides/lkk.jpg
+/home/schattenmacher/aevo-presentation-system/slides/methode.jpg
+/home/schattenmacher/aevo-presentation-system/slides/ueben.jpg
+/home/schattenmacher/aevo-presentation-system/slides/ziel.jpg

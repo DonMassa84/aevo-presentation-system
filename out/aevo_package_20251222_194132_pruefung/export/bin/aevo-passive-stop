@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+systemctl --user stop wallpaper-passive-slideshow.service
+notify-send "AEVO Passive Slideshow" "Gestoppt" -t 2000 || true
