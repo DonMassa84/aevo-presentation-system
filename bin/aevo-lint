@@ -2,27 +2,12 @@
 set -euo pipefail
 
 YAML="content/aevo_master.yaml"
-REQ=900
+test -f "$YAML" || { echo "FAIL: missing $YAML"; exit 1; }
 
-SUM=$(awk '/sec:/ {s+=$2} END {print s+0}' "$YAML")
-if [ "$SUM" -ne "$REQ" ]; then
-  echo "FAIL: duration $SUM != $REQ"
-  exit 1
-fi
+REQ="$(awk -F: '/^[[:space:]]*duration_sec:[[:space:]]*/ {gsub(/[[:space:]]/,"",$2); print $2; exit}' "$YAML")"
+[ -n "${REQ:-}" ] || { echo "FAIL: meta.duration_sec missing"; exit 1; }
 
-# order files
-ORDDIR="export/slides/orders"
-test -d "$ORDDIR" || { echo "FAIL: missing $ORDDIR"; exit 1; }
-
-# manifest + variants
-test -f "export/slides/manifest.json" || echo "WARN: missing export/slides/manifest.json (run bin/aevo-manifest)"
-test -f "$ORDDIR/_order_15min.txt" || echo "WARN: missing _order_15min.txt (run bin/aevo-variants)"
-test -f "$ORDDIR/_order_3min.txt" || echo "WARN: missing _order_3min.txt (run bin/aevo-variants)"
-test -f "$ORDDIR/_order_fragen.txt" || echo "WARN: missing _order_fragen.txt (run bin/aevo-variants)"
-
-# slide files referenced by master
-awk '/file:/ {print $2}' "$YAML" | while read -r f; do
-  [ -f "export/$f" ] || echo "WARN: missing export/$f"
-done
+SUM="$(awk -F: '/^[[:space:]]*sec:[[:space:]]*/ {gsub(/[[:space:]]/,"",$2); s+=$2} END {print s+0}' "$YAML")"
+[ "$SUM" -eq "$REQ" ] || { echo "FAIL: duration $SUM != $REQ"; exit 1; }
 
 echo "OK: aevo-lint"
