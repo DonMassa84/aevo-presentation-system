@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ORDDIR="export/slides/orders"
+SRCDIR="$ORDDIR"
+OUTDIR="$ORDDIR"
+
+src=""
+for f in "_order.txt" "_order_default.txt" "_order_base.txt"; do
+  if [ -f "$SRCDIR/$f" ]; then src="$SRCDIR/$f"; break; fi
+done
+if [ -z "$src" ]; then
+  echo "FAIL: no base order found"
+  exit 1
+fi
+
+# heuristic:
+# - 15min = base (copy)
+# - 3min  = take first 6 non-empty lines max (fast briefing)
+# - fragen = lines containing "frage" or "prüfer" or "questions" else fallback last 3
+mapfile -t LINES < <(grep -vE '^\s*$|^\s*#' "$src" || true)
+
+# 15min
+cp -f "$src" "$OUTDIR/_order_15min.txt"
+
+# 3min
+: > "$OUTDIR/_order_3min.txt"
+c=0
+for line in "${LINES[@]}"; do
+  echo "$line" >> "$OUTDIR/_order_3min.txt"
+  c=$((c+1))
+  [ "$c" -ge 6 ] && break
+done
+
+# fragen
+: > "$OUTDIR/_order_fragen.txt"
+hit=0
+for line in "${LINES[@]}"; do
+  if printf '%s' "$line" | grep -Eqi 'frage|prüfer|question'; then
+    echo "$line" >> "$OUTDIR/_order_fragen.txt"
+    hit=1
+  fi
+done
+if [ "$hit" -eq 0 ]; then
+  # fallback last 3
+  n="${#LINES[@]}"
+  start=$(( n>3 ? n-3 : 0 ))
+  for ((i=start;i<n;i++)); do
+    echo "${LINES[$i]}" >> "$OUTDIR/_order_fragen.txt"
+  done
+fi
+
+echo "OK: wrote variants in $OUTDIR"

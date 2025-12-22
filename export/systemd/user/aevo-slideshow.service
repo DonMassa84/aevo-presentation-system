@@ -1,10 +1,10 @@
 [Unit]
-Description=AEVO Wallpaper Loop
+Description=AEVO Slideshow Launcher
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=%h/aevo-presentation-system/export/bin/aevo-wallpaper-loop.sh
+ExecStart=%h/aevo-presentation-system/export/bin/aevo-slideshow-launcher
 Restart=on-failure
 RestartSec=2
 

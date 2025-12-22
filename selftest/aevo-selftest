@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+bin/aevo-variants
+bin/aevo-manifest
 bin/aevo-lint
 bin/aevo-pack
 echo "OK: selftest passed"
