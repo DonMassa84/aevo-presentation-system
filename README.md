@@ -30,3 +30,13 @@ docs/ARCHITECTURE.md
 
 Kontakt
 Fuer Anpassungen oder Support: Issue eroeffnen oder Kontakt ueber GitHub-Profil.
+
+Release
+- Tag: v1.1-deterministic-pipeline
+- URL: https://github.com/DonMassa84/aevo-presentation-system/releases/tag/v1.1-deterministic-pipeline
+- ZIP: aevo_package_20251222_185856.zip
+- SHA256: c32dc81bbb42f4ec196833796aa28ff0d4fa16d1d1d166a9431a94063276fd4f
+
+1-Command Install
+Run selftest, pack, then install systemd auto-start.
+cd ~/aevo-presentation-system && selftest/aevo-selftest && bin/aevo-pack && bin/aevo-systemd-install && systemctl --user enable --now aevo-slideshow.service
