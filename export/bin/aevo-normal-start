@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+systemctl --user stop wallpaper-passive-slideshow.service 2>/dev/null || true
+systemctl --user restart wallpaper-4mon-slideshow.service
+notify-send "AEVO Normal Slideshow" "Gestartet (18 Bilder)" -t 2500 || true

@@ -1,0 +1,13 @@
+[Unit]
+Description=AEVO Feb2026 Wallpaper Slideshow (Lerntyp)
+After=graphical-session.target
+
+[Service]
+Type=simple
+Environment=AEVO_MODE=exam15
+ExecStart=%h/.local/bin/aevo-wallpaper-loop.sh %h/Bilder/AEVO_Feb2026_Slideshow_DarkMode_Lerntyp
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

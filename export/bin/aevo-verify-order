@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SVC="${AEVO_SVC:-aevo-wallpaper-loop.service}"
+SLIDES_DIR="${AEVO_SLIDES_DIR:-$HOME/Bilder/AEVO_Feb2026_Slideshow_DarkMode_Lerntyp}"
+LOGN="${AEVO_LOGN:-6000}"
+
+mode="${1:-}"
+k="${2:-20}"
+
+if [ -z "${mode:-}" ]; then
+  conf="$HOME/.config/systemd/user/${SVC}.d/mode.conf"
+  if [ -f "$conf" ]; then
+    mode="$(awk -F= '/Environment=AEVO_MODE=/{print $2}' "$conf" | tail -n1 | tr -d '[:space:]')"
+  fi
+fi
+
+if [ -z "${mode:-}" ]; then
+  echo "FAIL: mode fehlt. Nutzung: aevo-verify-order <mode> [K]"
+  exit 2
+fi
+
+case "$mode" in
+  base|default|didaktik|exam15|final|security|spaced) ;;
+  *) echo "FAIL: unbekannter mode: $mode"; exit 2 ;;
+esac
+
+order="$SLIDES_DIR/_order_${mode}.txt"
+if [ ! -f "$order" ]; then
+  if [ "$mode" = "default" ] && [ -f "$SLIDES_DIR/_order.txt" ]; then
+    order="$SLIDES_DIR/_order.txt"
+  else
+    echo "FAIL: order fehlt: $order"
+    exit 1
+  fi
+fi
+
+pid="$(
+  journalctl --user -u "$SVC" -n "$LOGN" --no-pager \
+  | awk -v m="MODE=$mode" '
+      $0 ~ m {
+        if (match($0, /\[[0-9]+\]/)) {
+          p = substr($0, RSTART+1, RLENGTH-2)
+        }
+      }
+      END { print p }
+    '
+)"
+
+if [ -z "${pid:-}" ]; then
+  echo "FAIL: kein PID für MODE=$mode gefunden (LOGN=$LOGN)"
+  exit 1
+fi
+
+mapfile -t want < <(sed 's/\r$//' "$order" | awk 'NF{print}')
+wlen="${#want[@]}"
+
+mapfile -t seen_all < <(
+  journalctl --user -u "$SVC" -n "$LOGN" --no-pager \
+  | awk -v pid="$pid" '
+      index($0, "aevo-wallpaper-loop.sh[" pid "]") && $0 ~ /SHOW / { print $(NF-1) }
+    '
+)
+
+slen="${#seen_all[@]}"
+if [ "$slen" -eq 0 ]; then
+  echo "FAIL: keine SHOW-Einträge für PID=$pid (MODE=$mode)"
+  exit 1
+fi
+
+if [ "$k" -lt 1 ]; then k=20; fi
+if [ "$k" -gt "$wlen" ]; then k="$wlen"; fi
+if [ "$k" -gt "$slen" ]; then k="$slen"; fi
+
+seen=("${seen_all[@]: -$k}")
+
+match_start="-1"
+for ((start=0; start<wlen; start++)); do
+  ok=1
+  for ((j=0; j<k; j++)); do
+    idx=$(( (start + j) % wlen ))
+    if [ "${seen[$j]}" != "${want[$idx]}" ]; then
+      ok=0
+      break
+    fi
+  done
+  if [ "$ok" -eq 1 ]; then
+    match_start="$start"
+    break
+  fi
+done
+
+echo "SVC=$SVC"
+echo "MODE=$mode"
+echo "PID=$pid"
+echo "SLIDES_DIR=$SLIDES_DIR"
+echo "ORDER=$order"
+echo "ORDER_LINES=$wlen"
+echo "SEEN_TOTAL=$slen"
+echo "CHECK_LAST_K=$k"
+
+if [ "$match_start" -ge 0 ]; then
+  echo "RESULT=OK"
+  echo "MATCH_START_INDEX=$match_start"
+  exit 0
+fi
+
+echo "RESULT=MISMATCH"
+echo "LAST_K_SEEN:"
+printf '%s\n' "${seen[@]}"
+exit 1

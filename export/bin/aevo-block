@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MODE="${1:-}"
+DIR="$HOME/Bilder/AEVO_Feb2026_Slideshow_DarkMode_Lerntyp"
+PLAYLIST="$HOME/Bilder/OperativePro_Rahmenplan_Slideshow_JPG/_audio_playlist.m3u"
+AUDIO_DIR="$HOME/Downloads/Notebook LM Videos und Audios/OP Mitarbeiterführung Passive"
+
+A1="$AUDIO_DIR/CIA_DSGVO_IAM_Kryptografie_Grundlagen.m4a"
+A2="$AUDIO_DIR/Arbeitsrecht_Fundament_für_AEVO_und_IT.m4a"
+A3="$AUDIO_DIR/Personalplanung_Führung_Qualifizierung_Operativer_Professional.m4a"
+V1="$AUDIO_DIR/IT-Sicherheit_&_Compliance.mp4"
+V2="$AUDIO_DIR/IT-Sicherheit_&_Compliance (1).mp4"
+
+case "$MODE" in
+  didaktik)
+    cp -f "$DIR/_order_didaktik.txt" "$DIR/_order.txt"
+    chmod u+w "$PLAYLIST" 2>/dev/null || true
+    : > "$PLAYLIST"
+    printf '%s\n' "$A3" >> "$PLAYLIST"
+    ;;
+  security)
+    cp -f "$DIR/_order_security.txt" "$DIR/_order.txt"
+    chmod u+w "$PLAYLIST" 2>/dev/null || true
+    : > "$PLAYLIST"
+    printf '%s\n' "$A1" "$V1" "$V2" >> "$PLAYLIST"
+    ;;
+  final)
+    cp -f "$DIR/_order_final.txt" "$DIR/_order.txt"
+    chmod u+w "$PLAYLIST" 2>/dev/null || true
+    : > "$PLAYLIST"
+    printf '%s\n' "$A2" >> "$PLAYLIST"
+    ;;
+  *)
+    echo "Usage: aevo-block didaktik|security|final"
+    exit 2
+    ;;
+esac
+
+chmod 444 "$PLAYLIST" 2>/dev/null || true
+
+systemctl --user daemon-reload >/dev/null 2>&1 || true
+systemctl --user restart aevo-wallpaper-loop.service >/dev/null 2>&1 || true
+systemctl --user restart op-audio-loop.service >/dev/null 2>&1 || true
+
+echo "OK: Block=$MODE"
+echo "Slides: $(wc -l < "$DIR/_order.txt" | tr -d ' ')"
+echo "Audio:  $(wc -l < "$PLAYLIST" | tr -d ' ')"

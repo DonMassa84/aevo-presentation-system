@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ENV_FILE="$HOME/.config/aevo-coach/env"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  . "$ENV_FILE" || true
+  set +a
+fi
+exec "/home/schattenmacher/.local/share/aevo-coach/.venv/bin/python" "/home/schattenmacher/.local/share/aevo-coach/aevo_coach.py" "$@"

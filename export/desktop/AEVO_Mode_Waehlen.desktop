@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=AEVO Mode wählen
+Exec=bash -lc 'aevo-mode-menu'
+Terminal=false
+Categories=Utility;

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=AEVO Mode spaced
+Exec=bash -lc 'aevo-set-mode spaced'
+Terminal=false
+Categories=Utility;

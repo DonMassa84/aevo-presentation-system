@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SVC="aevo-wallpaper-loop.service"
+D="$HOME/.config/systemd/user/${SVC}.d"
+mkdir -p "$D"
+printf '%s\n' '[Service]' 'Environment=AEVO_MODE=linear' > "$D/mode.conf"
+systemctl --user daemon-reload
+systemctl --user restart "$SVC"
+echo "OK: MODE=linear"

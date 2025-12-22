@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+systemctl --user daemon-reload
+systemctl --user enable --now aevo-wallpaper-loop.service
+systemctl --user --no-pager status aevo-wallpaper-loop.service | sed -n '1,18p'

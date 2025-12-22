@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+choices=("default" "exam15" "spaced" "didaktik" "security" "final" "base")
+
+if command -v zenity >/dev/null 2>&1; then
+  mode="$(zenity --list --title="AEVO Mode wählen" --column="Mode" "${choices[@]}" --height=320 --width=320 2>/dev/null || true)"
+  [ -n "${mode:-}" ] || exit 0
+  exec "$HOME/.local/bin/aevo-set-mode" "$mode"
+fi
+
+echo "zenity fehlt. Nutze: aevo-set-mode <mode>"
+exit 1

@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+set -euo pipefail
+AEVO_COACH_WRAPPER=1
+REAL="$HOME/.local/bin/aevo-coach.real"
+ENV_FILE="$HOME/.config/aevo-coach/env"
+DATA_DIR="$HOME/.local/share/aevo-coach"
+DRILL_DIR="$DATA_DIR/drills"
+
+usage() {
+  cat <<'TXT'
+AEVO-Coach
+Befehle:
+  aevo-coach drill [--rounds N] [--sec N] [--log FILE]
+  aevo-coach menu | quiz | eval "FRAGE" "ANTWORT" | plan | status
+TXT
+}
+
+if [ "${1:-}" != "drill" ]; then
+  exec "$REAL" "$@"
+fi
+shift || true
+
+rounds=20
+sec=10
+logfile=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --rounds) rounds="${2:-}"; shift 2 ;;
+    --sec) sec="${2:-}"; shift 2 ;;
+    --log) logfile="${2:-}"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "FAIL: Unbekanntes Argument: $1"; usage; exit 1 ;;
+  esac
+done
+
+mkdir -p "$DRILL_DIR" "$DATA_DIR"
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "FAIL: Env fehlt: $ENV_FILE"
+  exit 1
+fi
+
+set -a
+. "$ENV_FILE"
+set +a
+
+k="${OPENAI_API_KEY:-}"
+klen="$(printf '%s' "$k" | wc -c | tr -d ' ')"
+if [ "$klen" -lt 20 ]; then
+  echo "FAIL: OPENAI_API_KEY fehlt/zu kurz (len=$klen). Datei prüfen: $ENV_FILE"
+  exit 1
+fi
+
+model="${OPENAI_MODEL:-gpt-4o-mini}"
+ts="$(date +%Y%m%d-%H%M%S)"
+if [ -z "$logfile" ]; then
+  logfile="$DRILL_DIR/drill-$ts.jsonl"
+fi
+
+mapfile -t QUESTIONS <<'QEND'
+Nennen Sie Feinlernziel und Groblernziel Ihrer Unterweisung.
+Warum ist die 4-Stufen-Methode für dieses Thema geeignet?
+Wie sichern Sie den Lernerfolg objektiv ab (Lernerfolgskontrolle)?
+Welche typischen Beurteilungsfehler vermeiden Sie (Halo, Nikolaus, etc.)?
+Wie begründen Sie Ihre Methodenwahl didaktisch?
+Wie berücksichtigen Sie den Lernstand der Auszubildenden (Ausgangsniveau)?
+Was ist der betriebliche Anlass Ihrer Unterweisung?
+Wie definieren Sie Erfolgskriterien (SMART) für die Einheit?
+Welche Sicherheitsrisiken entstehen bei falscher Rechtevergabe in AD?
+Erklären Sie das Least-Privilege-Prinzip in einem Satz.
+Welche Datenschutz-Aspekte sind prüferrelevant bei Benutzerverwaltung?
+Wie strukturieren Sie Ihre 15-Minuten-Präsentation (roter Faden)?
+Welche Medien setzen Sie ein und warum?
+Wie stellen Sie Transfer in den Arbeitsalltag sicher?
+Wie gehen Sie mit Fehlern der Auszubildenden in Stufe 3 um?
+Warum ist Vormachen nicht gleich Nachmachen (didaktischer Unterschied)?
+Nennen Sie 3 Kontrollfragen für das Fachgespräch zu AD-Benutzeranlage.
+Welche Dokumentation gehört zum Ausbildungsnachweis nach der Unterweisung?
+Wie differenzieren Sie bei schneller vs. langsamer Lernerin?
+Was sind typische Stolpersteine beim AD-User anlegen (Name, OU, Gruppen)?
+Warum trennen Sie Benutzeranlage und Rechtevergabe sauber?
+Wie erklären Sie Gruppen vs. individuelle Berechtigungen?
+Welche Rolle spielt Motivation in der Unterweisung (kurz, praxisnah)?
+Wie sichern Sie IT-Sicherheit im Ablauf ab?
+Was tun Sie, wenn die Auszubildende Stufe 4 nicht schafft?
+QEND
+
+pick_question() {
+  printf '%s\n' "${QUESTIONS[@]}" | shuf -n 1
+}
+
+echo "AEVO DRILL START"
+echo "MODEL=$model"
+echo "ROUNDS=$rounds"
+echo "SEC=$sec"
+echo "LOG=$logfile"
+echo
+
+touch "$logfile"
+chmod 600 "$logfile" 2>/dev/null || true
+
+ok=0
+fail=0
+timeout=0
+
+for n in $(seq 1 "$rounds"); do
+  q="$(pick_question)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "RUN $n/$rounds"
+  echo "FRAGE: $q"
+  echo "Antwortfenster: ${sec}s (Timeout beendet Eingabe)"
+  echo
+
+  ans=""
+  if ! IFS= read -r -t "$sec" ans; then
+    ans=""
+    timeout=$((timeout+1))
+    echo "[TIMEOUT]"
+  fi
+
+  out=""
+  if out="$("$REAL" eval "$q" "$ans" 2>&1)"; then
+    ok=$((ok+1))
+    echo "$out"
+  else
+    fail=$((fail+1))
+    echo "EVAL_FAIL"
+    echo "$out"
+  fi
+
+  python3 - <<PY >> "$logfile"
+import json, time
+q = ${q@Q}
+a = ${ans@Q}
+o = ${out@Q}
+rec = {
+  "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+  "model": "${model}",
+  "round": ${n},
+  "sec": ${sec},
+  "question": q,
+  "answer": a,
+  "eval_output": o,
+}
+print(json.dumps(rec, ensure_ascii=False))
+PY
+
+  echo
+done
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "AEVO DRILL ENDE"
+echo "OK=$ok FAIL=$fail TIMEOUT=$timeout"
+echo "LOGFILE=$logfile"

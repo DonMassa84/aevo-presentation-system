@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=AEVO Mode spaced
+Exec=/home/schattenmacher/.local/bin/aevo-mode-spaced
+Icon=appointment-new
+Terminal=true

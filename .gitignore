@@ -11,3 +11,7 @@ AEVO_Diashow*/
 AEVO_Slideshow*/
 node_modules/
 dist/
+.venv/
+*.jpeg
+*.log
+.DS_Store

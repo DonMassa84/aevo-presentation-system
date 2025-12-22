@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SVC="${AEVO_SVC:-aevo-wallpaper-loop.service}"
+MODE="${1:-}"
+
+allowed="base default didaktik exam15 final security spaced"
+
+if [ -z "${MODE:-}" ]; then
+  echo "Usage: aevo-set-mode <base|default|didaktik|exam15|final|security|spaced>"
+  exit 2
+fi
+
+case " $allowed " in
+  *" $MODE "*) ;;
+  *) echo "FAIL: unknown mode: $MODE"; echo "Allowed: $allowed"; exit 2 ;;
+esac
+
+DROP_DIR="$HOME/.config/systemd/user/${SVC}.d"
+MODE_CONF="$DROP_DIR/mode.conf"
+mkdir -p "$DROP_DIR"
+
+printf "[Service]\nEnvironment=AEVO_MODE=%s\n" "$MODE" > "$MODE_CONF"
+
+systemctl --user daemon-reload >/dev/null 2>&1 || true
+systemctl --user restart "$SVC" >/dev/null 2>&1 || true
+
+echo "MODE gesetzt: $MODE"
+echo "mode.conf:"
+sed -n '1,20p' "$MODE_CONF" || true
+echo
+systemctl --user status "$SVC" --no-pager | sed -n '1,25p' || true

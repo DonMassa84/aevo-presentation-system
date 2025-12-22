@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SVC="aevo-wallpaper-loop.service"
+DROP_DIR="$HOME/.config/systemd/user/${SVC}.d"
+DROP_FILE="$DROP_DIR/override.conf"
+mkdir -p "$DROP_DIR"
+printf '%s\n' '[Service]' 'Environment=AEVO_TEST_SEC=60' > "$DROP_FILE"
+systemctl --user daemon-reload
+systemctl --user restart "$SVC"
+echo "OK: Sprint ON (60s pro Slide)"

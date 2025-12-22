@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pick=""
+if command -v zenity >/dev/null 2>&1; then
+  pick="$(zenity --list --title="AEVO Mode" --column="Mode" base spaced exam15 didaktik security final --height=320 --width=360 2>/dev/null || true)"
+else
+  echo "Wähle Mode: base|spaced|exam15|didaktik|security|final"
+  read -r pick || true
+fi
+
+[ -n "${pick:-}" ] || exit 0
+exec "$HOME/.local/bin/aevo-set-mode" "$pick"
