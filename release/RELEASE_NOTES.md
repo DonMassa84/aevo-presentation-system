@@ -1,12 +1,11 @@
-Release v1.1 deterministic pipeline
-Timestamp: 2025-12-22 18:58:56
+Release v1.1.1-readme-proof
+Timestamp: 2025-12-22T19:20:20+01:00
 
 Highlights
-- SSOT: content/aevo_master.yaml steuert Zeitbudget und Slide-Metadaten
-- Pipeline: aevo-sync-export -> aevo-variants -> aevo-manifest -> aevo-lint -> aevo-pack
-- Selftest: selftest/aevo-selftest als Release-Gate
-- Systemd optional: bin/aevo-systemd-install plus aevo-slideshow.service
+- Deterministische Pipeline: aevo-lint, aevo-variants, aevo-manifest, aevo-pack
+- SSOT: content/aevo_master.yaml
+- Selftest Gate: selftest/aevo-selftest
 
 Assets
-- ZIP: out/aevo_package_20251222_185856.zip
-- SHA256: c32dc81bbb42f4ec196833796aa28ff0d4fa16d1d1d166a9431a94063276fd4f
+- aevo_package_20251222_192020.zip
+- release/SHA256SUMS.txt
