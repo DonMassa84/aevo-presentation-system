@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SVC="${AEVO_SVC:-aevo-wallpaper-loop.service}"
+SLIDES_DIR="${AEVO_SLIDES_DIR:-$HOME/Bilder/AEVO_Feb2026_Slideshow_DarkMode_Lerntyp}"
+LOGN="${AEVO_LOGN:-9000}"
+
+mode="${1:-}"
+k="${2:-20}"
+
+detect_mode() {
+  local conf="$HOME/.config/systemd/user/${SVC}.d/mode.conf"
+  if [ -f "$conf" ]; then
+    sed -n 's/^[[:space:]]*Environment=AEVO_MODE=//p' "$conf" | tail -n1 | tr -d '[:space:]"'
+  fi
+}
+
+if [ -z "${mode}" ]; then
+  mode="$(detect_mode || true)"
+  [ -n "${mode}" ] || mode="auto"
+fi
+
+order="$SLIDES_DIR/_order_${mode}.txt"
+
+echo "OK: installed: $0"
+echo "MODE: $mode"
+echo "SLIDES_DIR: $SLIDES_DIR"
+echo "ORDER: $order"
+
+if [ ! -d "$SLIDES_DIR" ]; then
+  echo "FAIL: SLIDES_DIR missing: $SLIDES_DIR" >&2
+  exit 2
+fi
+
+img_count="$(find "$SLIDES_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | wc -l | tr -d ' ')"
+echo "IMAGES: $img_count"
+
+if [ ! -f "$order" ]; then
+  echo "FAIL: order file missing: $order" >&2
+  exit 3
+fi
+
+line_count="$(wc -l < "$order" | tr -d ' ')"
+echo "ORDER_LINES: $line_count"
+
+if [ "$line_count" -eq 0 ]; then
+  echo "FAIL: order file empty" >&2
+  exit 4
+fi
+
+echo
+echo "TOP_${k}:"
+nl -ba "$order" | head -n "$k"
+
+echo
+echo "DUPLICATES:"
+dup="$(sort "$order" | uniq -d | head -n 50 || true)"
+if [ -n "$dup" ]; then
+  echo "$dup"
+else
+  echo "OK: none"
+fi
+
+echo
+echo "MISSING_FILES:"
+miss=0
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  if [ ! -f "$SLIDES_DIR/$f" ]; then
+    echo "$f"
+    miss=$((miss+1))
+  fi
+done < "$order"
+if [ "$miss" -eq 0 ]; then
+  echo "OK: none"
+else
+  echo "FAIL: missing=$miss" >&2
+  exit 5
+fi
+
+echo
+echo "OK: verify done"
