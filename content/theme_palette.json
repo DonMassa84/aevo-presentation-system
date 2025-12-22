@@ -1,0 +1,41 @@
+{
+  "pruefung": {
+    "name": "Pruefung (low arousal, max readability)",
+    "tint_hex": "#0B1020",
+    "tint_pct": 10,
+    "semantics": {
+      "base": "#0B1020",
+      "text": "#E8EDF5",
+      "accent": "#2DD4BF",
+      "warn": "#F59E0B",
+      "danger": "#EF4444",
+      "ok": "#22C55E"
+    }
+  },
+  "training": {
+    "name": "Training (slightly higher energy, still calm)",
+    "tint_hex": "#0A1F2E",
+    "tint_pct": 14,
+    "semantics": {
+      "base": "#0A1F2E",
+      "text": "#E8EDF5",
+      "accent": "#38BDF8",
+      "warn": "#FBBF24",
+      "danger": "#F87171",
+      "ok": "#34D399"
+    }
+  },
+  "recall": {
+    "name": "Recall (high contrast cueing)",
+    "tint_hex": "#05060A",
+    "tint_pct": 8,
+    "semantics": {
+      "base": "#05060A",
+      "text": "#F4F7FF",
+      "accent": "#A855F7",
+      "warn": "#F59E0B",
+      "danger": "#EF4444",
+      "ok": "#22C55E"
+    }
+  }
+}

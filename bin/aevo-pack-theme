@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MODE="${1:-}"
+test -n "${MODE:-}" || { echo "FAIL: usage: bin/aevo-pack-theme <pruefung|training|recall>"; exit 1; }
+
+cd "${REPO_DIR:-$HOME/aevo-presentation-system}"
+
+test -f "content/theme_palette.json" || { echo "FAIL: missing content/theme_palette.json"; exit 1; }
+
+if [ -x "selftest/aevo-selftest" ]; then
+  selftest/aevo-selftest >/dev/null
+fi
+
+if [ -x "bin/aevo-pack" ]; then
+  bin/aevo-pack >/dev/null 2>&1 || true
+fi
+
+LATEST_DIR="$(ls -1dt out/aevo_package_* 2>/dev/null | head -n 1 || true)"
+test -n "${LATEST_DIR:-}" || { echo "FAIL: no out/aevo_package_* found"; exit 1; }
+test -d "$LATEST_DIR" || { echo "FAIL: latest package is not a dir: $LATEST_DIR"; exit 1; }
+
+THEME_DIR="${LATEST_DIR}_${MODE}"
+rm -rf "$THEME_DIR"
+mkdir -p "$THEME_DIR"
+cp -a "$LATEST_DIR/." "$THEME_DIR/"
+
+python3 -m venv .venv_theme >/dev/null 2>&1 || true
+# shellcheck disable=SC1091
+source .venv_theme/bin/activate
+python -m pip -q install -U pip >/dev/null
+python -m pip -q install pillow >/dev/null
+
+python - <<'PY'
+from pathlib import Path
+import json, os
+from PIL import Image
+
+mode = os.environ.get("MODE")
+pkg = Path(os.environ["THEME_DIR"]).resolve()
+pal = json.loads(Path("content/theme_palette.json").read_text(encoding="utf-8"))
+if mode not in pal:
+    raise SystemExit(f"FAIL: unknown mode: {mode}. Valid: {', '.join(pal.keys())}")
+
+tint_hex = pal[mode]["tint_hex"].lstrip("#")
+tint_pct = int(pal[mode]["tint_pct"])
+r = int(tint_hex[0:2], 16)
+g = int(tint_hex[2:4], 16)
+b = int(tint_hex[4:6], 16)
+alpha = max(0, min(255, round(255 * (tint_pct / 100.0))))
+
+exts = {".png",".jpg",".jpeg",".webp"}
+imgs = []
+for p in pkg.rglob("*"):
+    if p.is_file() and p.suffix.lower() in exts:
+        imgs.append(p)
+
+if not imgs:
+    print("FAIL: no image assets found in themed package copy.")
+    print(f"HINT: inspect {pkg} for how slides are stored (maybe html/svg/pdf).")
+    raise SystemExit(1)
+
+for p in imgs:
+    try:
+        im = Image.open(p).convert("RGBA")
+        overlay = Image.new("RGBA", im.size, (r, g, b, alpha))
+        out = Image.alpha_composite(im, overlay).convert("RGB")
+        tmp = p.with_suffix(p.suffix + ".tmp")
+        out.save(tmp, quality=95)
+        tmp.replace(p)
+    except Exception:
+        continue
+
+print(f"OK: tinted {len(imgs)} images in {pkg}")
+PY
+
+deactivate >/dev/null 2>&1 || true
+
+command -v zip >/dev/null 2>&1 || { echo "FAIL: zip missing (sudo apt install -y zip)"; exit 1; }
+
+ZIP="${THEME_DIR}.zip"
+rm -f "$ZIP"
+( cd out && zip -qr "$(basename "$ZIP")" "$(basename "$THEME_DIR")" )
+test -f "$ZIP" || { echo "FAIL: zip not created: $ZIP"; exit 1; }
+
+sha256sum "$ZIP" > "release/SHA256SUMS_${MODE}.txt" 2>/dev/null || true
+
+echo "OK: MODE=$MODE"
+echo "OK: THEME_DIR=$THEME_DIR"
+echo "OK: ZIP=$ZIP"
