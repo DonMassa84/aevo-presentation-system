@@ -6,3 +6,9 @@ cp -r export/slides "$OUT/"
 cp content/aevo_master.yaml "$OUT/"
 echo "{ \"packed_at\": \"$(date -Is)\" }" > "$OUT/manifest.json"
 echo "OK: packed to $OUT"
+# AEVO_PACK_INJECT_SLIDES_V1
+LATEST_DIR="$(ls -1dt out/aevo_package_* 2>/dev/null | head -n 1 || true)"
+if [ -n "${LATEST_DIR:-}" ] && [ -d "$LATEST_DIR" ] && [ -d "slides" ]; then
+  mkdir -p "$LATEST_DIR/slides"
+  cp -a slides/. "$LATEST_DIR/slides/" 2>/dev/null || true
+fi

@@ -5,16 +5,13 @@ MODE="${1:-}"
 test -n "${MODE:-}" || { echo "FAIL: usage: bin/aevo-pack-theme <pruefung|training|recall>"; exit 1; }
 
 cd "${REPO_DIR:-$HOME/aevo-presentation-system}"
-
 test -f "content/theme_palette.json" || { echo "FAIL: missing content/theme_palette.json"; exit 1; }
 
 if [ -x "selftest/aevo-selftest" ]; then
   selftest/aevo-selftest >/dev/null
 fi
 
-if [ -x "bin/aevo-pack" ]; then
-  bin/aevo-pack >/dev/null 2>&1 || true
-fi
+bin/aevo-pack >/dev/null 2>&1 || true
 
 LATEST_DIR="$(ls -1dt out/aevo_package_* 2>/dev/null | head -n 1 || true)"
 test -n "${LATEST_DIR:-}" || { echo "FAIL: no out/aevo_package_* found"; exit 1; }
@@ -25,20 +22,27 @@ rm -rf "$THEME_DIR"
 mkdir -p "$THEME_DIR"
 cp -a "$LATEST_DIR/." "$THEME_DIR/"
 
+if [ -d "slides" ]; then
+  mkdir -p "$THEME_DIR/slides"
+  cp -a slides/. "$THEME_DIR/slides/" 2>/dev/null || true
+fi
+
 python3 -m venv .venv_theme >/dev/null 2>&1 || true
-# shellcheck disable=SC1091
 source .venv_theme/bin/activate
 python -m pip -q install -U pip >/dev/null
 python -m pip -q install pillow >/dev/null
+
+export MODE THEME_DIR
 
 python - <<'PY'
 from pathlib import Path
 import json, os
 from PIL import Image
 
-mode = os.environ.get("MODE")
+mode = os.environ["MODE"]
 pkg = Path(os.environ["THEME_DIR"]).resolve()
 pal = json.loads(Path("content/theme_palette.json").read_text(encoding="utf-8"))
+
 if mode not in pal:
     raise SystemExit(f"FAIL: unknown mode: {mode}. Valid: {', '.join(pal.keys())}")
 
@@ -50,14 +54,18 @@ b = int(tint_hex[4:6], 16)
 alpha = max(0, min(255, round(255 * (tint_pct / 100.0))))
 
 exts = {".png",".jpg",".jpeg",".webp"}
-imgs = []
-for p in pkg.rglob("*"):
-    if p.is_file() and p.suffix.lower() in exts:
-        imgs.append(p)
+imgs = [p for p in pkg.rglob("*") if p.is_file() and p.suffix.lower() in exts]
 
 if not imgs:
-    print("FAIL: no image assets found in themed package copy.")
-    print(f"HINT: inspect {pkg} for how slides are stored (maybe html/svg/pdf).")
+    top = {}
+    for p in pkg.rglob("*"):
+        if p.is_file():
+            ext = p.suffix.lower() if p.suffix else "(noext)"
+            top[ext] = top.get(ext, 0) + 1
+    print("FAIL: no tintable assets found (images).")
+    print("INFO: top filetypes:")
+    for k,v in sorted(top.items(), key=lambda x: -x[1])[:10]:
+        print(f"{v:6d} {k}")
     raise SystemExit(1)
 
 for p in imgs:
@@ -69,7 +77,7 @@ for p in imgs:
         out.save(tmp, quality=95)
         tmp.replace(p)
     except Exception:
-        continue
+        pass
 
 print(f"OK: tinted {len(imgs)} images in {pkg}")
 PY
@@ -83,7 +91,8 @@ rm -f "$ZIP"
 ( cd out && zip -qr "$(basename "$ZIP")" "$(basename "$THEME_DIR")" )
 test -f "$ZIP" || { echo "FAIL: zip not created: $ZIP"; exit 1; }
 
-sha256sum "$ZIP" > "release/SHA256SUMS_${MODE}.txt" 2>/dev/null || true
+mkdir -p release
+sha256sum "$ZIP" > "release/SHA256SUMS_${MODE}.txt"
 
 echo "OK: MODE=$MODE"
 echo "OK: THEME_DIR=$THEME_DIR"
