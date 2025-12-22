@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+YAML="content/aevo_master.yaml"
+REQ=900
+SUM=$(awk '/sec:/ {s+=$2} END {print s+0}' "$YAML")
+if [ "$SUM" -ne "$REQ" ]; then
+  echo "FAIL: duration $SUM != $REQ"
+  exit 1
+fi
+awk '/file:/ {print $2}' "$YAML" | while read -r f; do
+  [ -f "export/$f" ] || echo "WARN: missing export/$f"
+done
+echo "OK: aevo-lint"

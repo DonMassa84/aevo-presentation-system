@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+OUT="out/aevo_package_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$OUT"
+cp -r export/slides "$OUT/"
+cp content/aevo_master.yaml "$OUT/"
+echo "{ \"packed_at\": \"$(date -Is)\" }" > "$OUT/manifest.json"
+echo "OK: packed to $OUT"

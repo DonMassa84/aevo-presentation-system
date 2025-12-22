@@ -1,0 +1,33 @@
+meta:
+  title: "AEVO Unterweisung – Active Directory Benutzer anlegen"
+  duration_sec: 900
+  variant: standard
+slides:
+  - id: intro
+    title: Ausgangssituation
+    sec: 60
+    file: slides/intro.jpg
+  - id: ziel
+    title: Lernziel
+    sec: 60
+    file: slides/ziel.jpg
+  - id: methode
+    title: Vier-Stufen-Methode
+    sec: 120
+    file: slides/methode.jpg
+  - id: demo
+    title: Vormachen
+    sec: 180
+    file: slides/demo.jpg
+  - id: ueben
+    title: Üben lassen
+    sec: 300
+    file: slides/ueben.jpg
+  - id: lkk
+    title: Lernerfolgskontrolle
+    sec: 120
+    file: slides/lkk.jpg
+  - id: fragen
+    title: Prüferfragen
+    sec: 60
+    file: slides/fragen.jpg
