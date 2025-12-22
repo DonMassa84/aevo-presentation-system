@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=AEVO Slideshow Manager
+GenericName=AEVO Lern-Slideshow
+Comment=Startet den AEVO Slideshow Manager (yad/zenity)
+Exec=/home/schattenmacher/aevo-presentation-system/export/bin/aevo-slideshow-launcher
+Icon=preferences-desktop-wallpaper
+Terminal=false
+Categories=Education;Utility;
+StartupNotify=true
